@@ -27,6 +27,61 @@ class PixelSprite extends StatelessWidget {
   }
 }
 
+/// Renders a [SpriteSheet], stepping frames on a fixed loop — the Flutter
+/// equivalent of the design's `animation: shN <dur>s step-end infinite`.
+class AnimatedPixelSprite extends StatefulWidget {
+  final SpriteSheet sheet;
+  final double? size;
+  final double? width;
+  final double? height;
+
+  const AnimatedPixelSprite(this.sheet, {super.key, this.size}) : width = null, height = null;
+
+  const AnimatedPixelSprite.box(this.sheet, {super.key, required double this.width, required double this.height})
+      : size = null;
+
+  @override
+  State<AnimatedPixelSprite> createState() => _AnimatedPixelSpriteState();
+}
+
+class _AnimatedPixelSpriteState extends State<AnimatedPixelSprite> with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: widget.sheet.duration)..repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedPixelSprite oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.sheet.duration != oldWidget.sheet.duration) {
+      _c.duration = widget.sheet.duration;
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final w = widget.width ?? widget.size!;
+    final h = widget.height ?? widget.size!;
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final frames = widget.sheet.frames;
+        final step = (_c.value * frames.length).floor().clamp(0, frames.length - 1);
+        return SizedBox(width: w, height: h, child: CustomPaint(painter: _PixelPainter(frames[step])));
+      },
+    );
+  }
+}
+
 class _PixelPainter extends CustomPainter {
   final PixelGrid grid;
   _PixelPainter(this.grid);

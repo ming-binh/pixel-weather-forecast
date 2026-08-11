@@ -7,6 +7,7 @@ import '../pixel/sprites.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../widgets/bobbing.dart';
+import '../widgets/mascot_widget.dart';
 import '../widgets/pixel_panel.dart';
 import '../widgets/pixel_sprite.dart';
 
@@ -35,6 +36,7 @@ class HomeScreen extends StatelessWidget {
   final String tod;
   final String cond;
   final String unit;
+  final String char;
   final DateTime now;
   final WeatherSnapshot weather;
   final VoidCallback onOpenLocations;
@@ -46,6 +48,7 @@ class HomeScreen extends StatelessWidget {
     required this.tod,
     required this.cond,
     required this.unit,
+    required this.char,
     required this.now,
     required this.weather,
     required this.onOpenLocations,
@@ -63,6 +66,7 @@ class HomeScreen extends StatelessWidget {
     final dateLine = '${weekdayNames[jsDow]}, ${now.day}/${now.month}';
     final clock = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     final today = weather.daily.first;
+    final mascotInfo = mascotChars[char]!;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 56, 18, 104),
@@ -78,7 +82,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        PixelSprite(miniIcon('pin'), size: 14),
+                        AnimatedPixelSprite(miniIconSheet('pin'), size: 14),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
@@ -149,7 +153,7 @@ class HomeScreen extends StatelessWidget {
               ),
               Bobbing.bob(
                 duration: const Duration(milliseconds: 1100),
-                child: PixelSprite(weatherIcon(icon), size: 112),
+                child: AnimatedPixelSprite(weatherIconSheet(icon), size: 112),
               ),
             ],
           ),
@@ -159,7 +163,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               Bobbing.bob2(
                 duration: const Duration(milliseconds: 1200),
-                child: PixelSprite(mascot(mascotKind), size: 88),
+                child: MascotWidget(char: char, state: mascotKind, size: 88),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -172,7 +176,7 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('MÈO MÂY MÁCH',
+                        Text(mascotInfo.tag,
                             style: PixelText.pixelify(
                                 fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: PixelColors.errorRed)),
                         const SizedBox(height: 3),
@@ -264,7 +268,7 @@ class _HourlyForecast extends StatelessWidget {
                       Text('${h.time.hour.toString().padLeft(2, '0')}:00',
                           style: PixelText.pixelify(fontSize: 11, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      PixelSprite(weatherIcon(iconKind), size: 32),
+                      AnimatedPixelSprite(weatherIconSheet(iconKind), size: 32),
                       const SizedBox(height: 4),
                       Text('$temp°', style: PixelText.pixelify(fontSize: 15, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 2),
@@ -375,7 +379,7 @@ class _DailyRow extends StatelessWidget {
         child: Row(
           children: [
             SizedBox(width: 52, child: Text(label, style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 12))),
-            SizedBox(width: 30, child: PixelSprite(weatherIcon(iconKind), size: 26)),
+            SizedBox(width: 30, child: AnimatedPixelSprite(weatherIconSheet(iconKind), size: 26)),
             const SizedBox(width: 8),
             Expanded(
               child: LayoutBuilder(
@@ -473,7 +477,7 @@ class _StatsGrid extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    PixelSprite(miniIcon(s.iconKind), size: 20),
+                    AnimatedPixelSprite(miniIconSheet(s.iconKind), size: 20),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(

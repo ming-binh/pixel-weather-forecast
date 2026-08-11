@@ -82,6 +82,15 @@ void outline(PixelGrid g, Color c) {
   }
 }
 
+/// A looping sequence of [PixelGrid] frames, matching the design's
+/// `sheetOf(size,n,dur,draw)` — `duration` is the whole loop's length,
+/// stepped between frames like CSS `steps(n,end)` (no cross-fade).
+class SpriteSheet {
+  final List<PixelGrid> frames;
+  final Duration duration;
+  const SpriteSheet(this.frames, this.duration);
+}
+
 /// Parses a `#RRGGBB` or `#RRGGBBAA` string into a [Color].
 Color hexColor(String hex) {
   var h = hex.replaceFirst('#', '');

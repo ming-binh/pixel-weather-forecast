@@ -6,6 +6,7 @@ import '../logic/weather_logic.dart';
 import '../pixel/sprites.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../widgets/mascot_widget.dart';
 import '../widgets/pixel_sprite.dart';
 
 /// Saved-places picker — mirrors the design's `isLoc` panel. Each row's
@@ -14,6 +15,7 @@ import '../widgets/pixel_sprite.dart';
 class LocationsScreen extends StatefulWidget {
   final String currentCity;
   final String unit;
+  final String char;
   final Map<String, WeatherSnapshot> weather;
   final Set<String> failedCities;
   final ValueChanged<String> onPick;
@@ -23,6 +25,7 @@ class LocationsScreen extends StatefulWidget {
     super.key,
     required this.currentCity,
     required this.unit,
+    required this.char,
     required this.weather,
     required this.failedCities,
     required this.onPick,
@@ -61,7 +64,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
             decoration: BoxDecoration(color: PixelColors.cream, border: Border.all(color: PixelColors.ink, width: 3)),
             child: Row(
               children: [
-                PixelSprite(miniIcon('search'), size: 16),
+                AnimatedPixelSprite(miniIconSheet('search'), size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
@@ -100,7 +103,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
               padding: const EdgeInsets.symmetric(vertical: 22),
               child: Column(
                 children: [
-                  PixelSprite(mascot('sad'), size: 64),
+                  MascotWidget(char: widget.char, state: 'sad', size: 64),
                   const SizedBox(height: 8),
                   Text('Không tìm thấy nơi nào tên vậy',
                       style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 12.5)),
@@ -154,7 +157,7 @@ class _PlaceRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            PixelSprite(weatherIcon(snapshot != null ? effIcon(snapshot!.cond, 'day') : 'clear'), size: 34),
+            AnimatedPixelSprite(weatherIconSheet(snapshot != null ? effIcon(snapshot!.cond, 'day') : 'clear'), size: 34),
             const SizedBox(width: 11),
             Expanded(
               child: Column(

@@ -47,5 +47,6 @@ app.*.map.json
 # AI tooling — internal instructions, agent config, local editor settings.
 # Not app source, shouldn't be pushed.
 CLAUDE.md
+TODO.md
 .agents/
 .claude/

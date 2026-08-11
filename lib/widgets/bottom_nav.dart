@@ -47,7 +47,7 @@ class PixelBottomNav extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      PixelSprite(miniIcon(entry.iconKind), size: 22),
+                      AnimatedPixelSprite(miniIconSheet(entry.iconKind), size: 22),
                       const SizedBox(height: 3),
                       Text(
                         entry.label,

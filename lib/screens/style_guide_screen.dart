@@ -82,7 +82,7 @@ class StyleGuideScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text('ICON SET THỜI TIẾT (16×16)',
+          Text('ICON SET THỜI TIẾT (32×32, ĐỘNG)',
               style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
           const SizedBox(height: 8),
           Container(
@@ -99,7 +99,7 @@ class StyleGuideScreen extends StatelessWidget {
                 for (final i in _iconSheet)
                   Column(
                     children: [
-                      PixelSprite(weatherIcon(i[0]), size: 48),
+                      AnimatedPixelSprite(weatherIconSheet(i[0]), size: 48),
                       const SizedBox(height: 4),
                       Text(i[1], textAlign: TextAlign.center, style: PixelText.beVietnam(fontSize: 9.5, color: PixelColors.mutedGray)),
                     ],

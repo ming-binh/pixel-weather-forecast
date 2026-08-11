@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../pixel/sprites.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../widgets/bobbing.dart';
-import '../widgets/pixel_sprite.dart';
+import '../widgets/mascot_widget.dart';
 
 /// First screen shown on launch — mirrors the design's `isSplash` panel.
 /// Navigation away from this screen (after ~2.1s) is handled by the parent.
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final String char;
+  const SplashScreen({super.key, required this.char});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -37,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       children: [
         Bobbing.bob2(
           duration: const Duration(milliseconds: 900),
-          child: PixelSprite(mascot('clear'), size: 96),
+          child: MascotWidget(char: widget.char, state: 'clear', size: 96),
         ),
         const SizedBox(height: 22),
         Text(

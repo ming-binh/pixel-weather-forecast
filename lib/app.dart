@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 
 import 'data/open_meteo_service.dart';
 import 'data/weather_data.dart';
-import 'pixel/sprites.dart';
 import 'screens/day_sheet.dart';
 import 'screens/home_screen.dart';
 import 'screens/locations_screen.dart';
@@ -15,8 +14,8 @@ import 'screens/style_guide_screen.dart';
 import 'theme/colors.dart';
 import 'theme/text_styles.dart';
 import 'widgets/bottom_nav.dart';
+import 'widgets/mascot_widget.dart';
 import 'widgets/pixel_panel.dart';
-import 'widgets/pixel_sprite.dart';
 import 'widgets/sky_background.dart';
 import 'widgets/status_chrome.dart';
 
@@ -37,6 +36,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
   String _unit = 'C';
   bool _notif = true;
   String _theme = 'Tự động';
+  String _char = 'cat';
   String _city = 'Đà Lạt';
   late DateTime _now;
 
@@ -151,6 +151,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
         final weather = _weather[_city];
         if (weather == null) {
           return _LoadingOrError(
+            char: _char,
             failed: _failedCities.contains(_city),
             onRetry: () => _loadCity(appCities.firstWhere((c) => c.name == _city)),
           );
@@ -160,6 +161,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
           tod: _tod,
           cond: _cond,
           unit: _unit,
+          char: _char,
           now: _now,
           weather: weather,
           onOpenLocations: () => _goto('loc'),
@@ -169,6 +171,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
         return LocationsScreen(
           currentCity: _city,
           unit: _unit,
+          char: _char,
           weather: _weather,
           failedCities: _failedCities,
           onPick: (city) => setState(() {
@@ -183,15 +186,17 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
           unit: _unit,
           notif: _notif,
           theme: _theme,
+          char: _char,
           onSetUnit: (u) => setState(() => _unit = u),
           onToggleNotif: () => setState(() => _notif = !_notif),
           onPickTheme: _pickTheme,
+          onPickChar: (c) => setState(() => _char = c),
           onOpenGuide: () => _goto('guide'),
         );
       case 'guide':
         return const StyleGuideScreen();
       default:
-        return const SplashScreen();
+        return SplashScreen(char: _char);
     }
   }
 
@@ -247,9 +252,10 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
 /// Shown on the Home screen while a city's Open-Meteo data is loading, or if
 /// the request failed (no internet, API down, etc).
 class _LoadingOrError extends StatelessWidget {
+  final String char;
   final bool failed;
   final VoidCallback onRetry;
-  const _LoadingOrError({required this.failed, required this.onRetry});
+  const _LoadingOrError({required this.char, required this.failed, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +263,7 @@ class _LoadingOrError extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          PixelSprite(mascot(failed ? 'sad' : 'clear'), size: 72),
+          MascotWidget(char: char, state: failed ? 'sad' : 'clear', size: 72),
           const SizedBox(height: 14),
           Text(
             failed ? 'Không lấy được dữ liệu thời tiết' : 'Đang tải dữ liệu thời tiết…',

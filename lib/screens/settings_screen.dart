@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../pixel/sprites.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
-import '../widgets/pixel_sprite.dart';
+import '../widgets/mascot_widget.dart';
 
 const themeOptions = ['Tự động', 'Bình minh', 'Ban ngày', 'Hoàng hôn', 'Ban đêm'];
 
@@ -12,9 +11,11 @@ class SettingsScreen extends StatelessWidget {
   final String unit;
   final bool notif;
   final String theme;
+  final String char;
   final ValueChanged<String> onSetUnit;
   final VoidCallback onToggleNotif;
   final ValueChanged<String> onPickTheme;
+  final ValueChanged<String> onPickChar;
   final VoidCallback onOpenGuide;
 
   const SettingsScreen({
@@ -22,9 +23,11 @@ class SettingsScreen extends StatelessWidget {
     required this.unit,
     required this.notif,
     required this.theme,
+    required this.char,
     required this.onSetUnit,
     required this.onToggleNotif,
     required this.onPickTheme,
+    required this.onPickChar,
     required this.onOpenGuide,
   });
 
@@ -135,16 +138,40 @@ class SettingsScreen extends StatelessWidget {
               border: Border.all(color: PixelColors.ink, width: 3),
               boxShadow: const [BoxShadow(color: Color(0x402B2B44), offset: Offset(0, 6))],
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Chọn bạn đồng hành', style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 12.5)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    for (final entry in mascotChars.entries) ...[
+                      if (entry.key != mascotChars.keys.first) const SizedBox(width: 8),
+                      Expanded(child: _CharCard(charKey: entry.key, info: entry.value, active: char == entry.key, onTap: () => onPickChar(entry.key))),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: PixelColors.cream,
+              border: Border.all(color: PixelColors.ink, width: 3),
+              boxShadow: const [BoxShadow(color: Color(0x402B2B44), offset: Offset(0, 6))],
+            ),
             child: Row(
               children: [
-                PixelSprite(mascot('clear'), size: 56),
+                MascotWidget(char: char, state: 'clear', size: 56),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Mèo Mây', style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 12.5)),
-                      Text('Gợi ý AI mỗi ngày dựa trên thời tiết thật. Tắt nếu bạn thích yên tĩnh.',
+                      Text(mascotChars[char]!.name, style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 12.5)),
+                      Text('${mascotChars[char]!.sub} · gợi ý AI mỗi ngày dựa trên thời tiết thật.',
                           style: PixelText.beVietnam(fontSize: 10.5, height: 1.4, color: PixelColors.mutedGray)),
                     ],
                   ),
@@ -173,6 +200,41 @@ class SettingsScreen extends StatelessWidget {
                 style: PixelText.beVietnam(fontSize: 10.5, color: PixelColors.mutedGray)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CharCard extends StatelessWidget {
+  final String charKey;
+  final MascotInfo info;
+  final bool active;
+  final VoidCallback onTap;
+  const _CharCard({required this.charKey, required this.info, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+        decoration: BoxDecoration(
+          color: active ? PixelColors.creamPanelActive : PixelColors.cream,
+          border: Border.all(color: active ? PixelColors.accentOrange : PixelColors.ink, width: 3),
+        ),
+        child: Column(
+          children: [
+            MascotWidget(char: charKey, state: 'clear', size: 44),
+            const SizedBox(height: 6),
+            Text(info.name, style: PixelText.pixelify(fontSize: 11, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 2),
+            Text(
+              info.sub,
+              textAlign: TextAlign.center,
+              style: PixelText.beVietnam(fontSize: 9.5, height: 1.3, color: PixelColors.mutedGray),
+            ),
+          ],
+        ),
       ),
     );
   }

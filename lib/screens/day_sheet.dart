@@ -44,7 +44,7 @@ class _DaySheetContent extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    PixelSprite(weatherIcon(day.kind), size: 52),
+                    AnimatedPixelSprite(weatherIconSheet(day.kind), size: 52),
                     const SizedBox(width: 11),
                     Expanded(
                       child: Column(

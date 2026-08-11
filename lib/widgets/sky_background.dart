@@ -78,9 +78,20 @@ class _SkyBackgroundState extends State<SkyBackground> with SingleTickerProvider
             alignment: Alignment.bottomCenter,
             child: LayoutBuilder(
               builder: (context, constraints) => PixelSprite.box(
-                hillGrid(hillColor),
+                scenery(hillColor, widget.timeOfDay, widget.condition),
                 width: constraints.maxWidth,
-                height: 190,
+                height: constraints.maxWidth * 48 / 92,
+              ),
+            ),
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) => AnimatedBuilder(
+              animation: _clock,
+              builder: (context, _) => _SkyDecor(
+                condition: widget.condition,
+                timeOfDay: widget.timeOfDay,
+                seconds: _clock.value * 120,
+                screenSize: constraints.biggest,
               ),
             ),
           ),
@@ -115,6 +126,95 @@ class _SkyBackgroundState extends State<SkyBackground> with SingleTickerProvider
         ],
       ),
     );
+  }
+}
+
+final SpriteSheet _birdSheet = birdSheet();
+final SpriteSheet _planeSheet = planeSheet();
+final SpriteSheet _balloonSheet = balloonSheet();
+
+/// One flying decoration: a bird, plane, or balloon crossing the sky on a
+/// loop. Mirrors the design's `flyR`/`flyL` lanes — linear horizontal drift,
+/// looping with a per-lane duration and start delay.
+class _SkyLane extends StatelessWidget {
+  final SpriteSheet sheet;
+  final double size;
+  final double topFraction;
+  final double durationSeconds;
+  final double delaySeconds;
+  final bool reverse;
+  final double seconds;
+  final Size screenSize;
+  final double bobAmplitude;
+
+  const _SkyLane({
+    required this.sheet,
+    required this.size,
+    required this.topFraction,
+    required this.durationSeconds,
+    required this.delaySeconds,
+    required this.seconds,
+    required this.screenSize,
+    this.reverse = false,
+    this.bobAmplitude = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final span = screenSize.width + size * 2;
+    var phase = ((seconds - delaySeconds) % durationSeconds) / durationSeconds;
+    if (phase < 0) phase += 1;
+    final x = reverse ? (screenSize.width + size) - phase * span : -size + phase * span;
+    final bob = bobAmplitude == 0 ? 0.0 : (((seconds / 2.4) % 1) < 0.5 ? 0.0 : -bobAmplitude);
+    return Positioned(
+      top: screenSize.height * topFraction + bob,
+      left: x,
+      child: AnimatedPixelSprite(sheet, size: size),
+    );
+  }
+}
+
+/// Birds, a plane, and (at dawn/dusk) a balloon drifting across the sky —
+/// shown only for calm, non-stormy weather, matching the design's rules.
+class _SkyDecor extends StatelessWidget {
+  final String condition;
+  final String timeOfDay;
+  final double seconds;
+  final Size screenSize;
+
+  const _SkyDecor({
+    required this.condition,
+    required this.timeOfDay,
+    required this.seconds,
+    required this.screenSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final night = timeOfDay == 'night';
+    final calm = condition == 'clear' || condition == 'cloudy' || condition == 'fog';
+    final lanes = <Widget>[
+      if (calm && !night) ...[
+        _SkyLane(sheet: _birdSheet, size: 32, topFraction: 392 / 824, durationSeconds: 17, delaySeconds: 0, seconds: seconds, screenSize: screenSize),
+        _SkyLane(sheet: _birdSheet, size: 24, topFraction: 420 / 824, durationSeconds: 21, delaySeconds: 2.2, seconds: seconds, screenSize: screenSize),
+        _SkyLane(sheet: _birdSheet, size: 24, topFraction: 366 / 824, durationSeconds: 25, delaySeconds: 9, seconds: seconds, screenSize: screenSize),
+      ],
+      if (condition != 'storm')
+        _SkyLane(sheet: _planeSheet, size: 72, topFraction: 444 / 824, durationSeconds: 34, delaySeconds: 5, seconds: seconds, screenSize: screenSize),
+      if ((timeOfDay == 'dawn' || timeOfDay == 'dusk') && calm)
+        _SkyLane(
+          sheet: _balloonSheet,
+          size: 48,
+          topFraction: 470 / 824,
+          durationSeconds: 52,
+          delaySeconds: 2,
+          reverse: true,
+          bobAmplitude: 3,
+          seconds: seconds,
+          screenSize: screenSize,
+        ),
+    ];
+    return IgnorePointer(child: Stack(children: lanes));
   }
 }
 
