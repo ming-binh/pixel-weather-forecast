@@ -132,6 +132,7 @@ class _SkyBackgroundState extends State<SkyBackground> with SingleTickerProvider
 final SpriteSheet _birdSheet = birdSheet();
 final SpriteSheet _planeSheet = planeSheet();
 final SpriteSheet _balloonSheet = balloonSheet();
+final SpriteSheet _ufoSheet = ufoSheet();
 
 /// One flying decoration: a bird, plane, or balloon crossing the sky on a
 /// loop. Mirrors the design's `flyR`/`flyL` lanes — linear horizontal drift,
@@ -174,8 +175,130 @@ class _SkyLane extends StatelessWidget {
   }
 }
 
-/// Birds, a plane, and (at dawn/dusk) a balloon drifting across the sky —
-/// shown only for calm, non-stormy weather, matching the design's rules.
+/// One flying decoration rendered from a static image asset instead of a
+/// procedural sprite sheet — the design's `imgFx(k,w)` layers (background
+/// clouds, the flapping-bird decoration). Same `flyR`/`flyL` drift as
+/// [_SkyLane], plus an optional CSS-`bob`-style vertical hop for the ones
+/// that have their own inner bobbing wrapper in the design.
+class _ImageSkyLane extends StatelessWidget {
+  final String asset;
+  final double width;
+  final double aspectRatio;
+  final double topFraction;
+  final double durationSeconds;
+  final double delaySeconds;
+  final bool reverse;
+  final double opacity;
+  final double bobAmplitude;
+  final double seconds;
+  final Size screenSize;
+
+  const _ImageSkyLane({
+    required this.asset,
+    required this.width,
+    required this.aspectRatio,
+    required this.topFraction,
+    required this.durationSeconds,
+    required this.delaySeconds,
+    required this.seconds,
+    required this.screenSize,
+    this.reverse = false,
+    this.opacity = 1,
+    this.bobAmplitude = 0,
+  });
+
+  /// Matches the design's `bob 0.5s steps(1,end)` wrapper on the flapping
+  /// decoration — the only lane that currently sets [bobAmplitude].
+  static const _bobPeriodSeconds = 0.5;
+
+  @override
+  Widget build(BuildContext context) {
+    final span = screenSize.width + width * 2;
+    var phase = ((seconds - delaySeconds) % durationSeconds) / durationSeconds;
+    if (phase < 0) phase += 1;
+    final x = reverse ? (screenSize.width + width) - phase * span : -width + phase * span;
+    final bob = bobAmplitude == 0 ? 0.0 : (((seconds / _bobPeriodSeconds) % 1) < 0.5 ? 0.0 : -bobAmplitude);
+    return Positioned(
+      top: screenSize.height * topFraction + bob,
+      left: x,
+      child: Opacity(
+        opacity: opacity,
+        child: Image.asset(
+          asset,
+          width: width,
+          height: width * aspectRatio,
+          filterQuality: FilterQuality.none,
+          // Decoration is optional flourish — a missing asset (not placed
+          // locally yet) should just skip silently, not show a broken-image
+          // icon over the weather UI.
+          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+        ),
+      ),
+    );
+  }
+}
+
+/// A brief diagonal streak of light, matching the design's `shoot` keyframes
+/// — mostly invisible, flashes across a fixed 7s loop.
+class _ShootingStar extends StatelessWidget {
+  final double seconds;
+  const _ShootingStar({required this.seconds});
+
+  static const _period = 7.0;
+
+  static double _opacityAt(double p) {
+    if (p < .78) return 0;
+    if (p < .80) return (p - .78) / .02;
+    if (p < .84) return 1;
+    if (p < .87) return 1 - (p - .84) / .03;
+    return 0;
+  }
+
+  static Offset _offsetAt(double p) {
+    if (p < .78) return Offset.zero;
+    if (p < .84) {
+      final t = (p - .78) / .06;
+      return Offset(-64 * t, 36 * t);
+    }
+    if (p < .87) {
+      final t = (p - .84) / .03;
+      return Offset(-64 + (-84 - -64) * t, 36 + (48 - 36) * t);
+    }
+    return const Offset(-84, 48);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var p = (seconds % _period) / _period;
+    if (p < 0) p += 1;
+    final opacity = _opacityAt(p);
+    if (opacity <= 0) return const SizedBox.shrink();
+    return Positioned(
+      top: 92,
+      right: 32,
+      child: Transform.translate(
+        offset: _offsetAt(p),
+        child: Opacity(
+          opacity: opacity,
+          child: Transform.rotate(
+            angle: 35 * math.pi / 180,
+            child: Container(
+              width: 22,
+              height: 2,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.transparent, Color(0xFFFFF6C8)]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Background clouds (always on), birds/plane/balloon, an occasional storm
+/// UFO, a cloudy/foggy-daytime flying decoration, and a clear-night shooting
+/// star. Visibility rules match the design's `skyLayer`.
 class _SkyDecor extends StatelessWidget {
   final String condition;
   final String timeOfDay;
@@ -194,6 +317,41 @@ class _SkyDecor extends StatelessWidget {
     final night = timeOfDay == 'night';
     final calm = condition == 'clear' || condition == 'cloudy' || condition == 'fog';
     final lanes = <Widget>[
+      // Big background clouds drift regardless of weather/time.
+      _ImageSkyLane(
+        asset: 'assets/sky/cloud-lg.png',
+        width: 168,
+        aspectRatio: 153 / 612,
+        topFraction: -14 / 824,
+        durationSeconds: 72,
+        delaySeconds: 0,
+        opacity: .58,
+        seconds: seconds,
+        screenSize: screenSize,
+      ),
+      _ImageSkyLane(
+        asset: 'assets/sky/cloud-md.png',
+        width: 128,
+        aspectRatio: 115 / 239,
+        topFraction: 2 / 824,
+        durationSeconds: 64,
+        delaySeconds: 34,
+        reverse: true,
+        opacity: .44,
+        seconds: seconds,
+        screenSize: screenSize,
+      ),
+      _ImageSkyLane(
+        asset: 'assets/sky/cloud-sm.png',
+        width: 86,
+        aspectRatio: 146 / 271,
+        topFraction: 18 / 824,
+        durationSeconds: 58,
+        delaySeconds: 18,
+        opacity: .4,
+        seconds: seconds,
+        screenSize: screenSize,
+      ),
       if (calm && !night) ...[
         _SkyLane(sheet: _birdSheet, size: 32, topFraction: 392 / 824, durationSeconds: 17, delaySeconds: 0, seconds: seconds, screenSize: screenSize),
         _SkyLane(sheet: _birdSheet, size: 24, topFraction: 420 / 824, durationSeconds: 21, delaySeconds: 2.2, seconds: seconds, screenSize: screenSize),
@@ -201,6 +359,29 @@ class _SkyDecor extends StatelessWidget {
       ],
       if (condition != 'storm')
         _SkyLane(sheet: _planeSheet, size: 72, topFraction: 444 / 824, durationSeconds: 34, delaySeconds: 5, seconds: seconds, screenSize: screenSize),
+      if (condition == 'storm')
+        _SkyLane(
+          sheet: _ufoSheet,
+          size: 56,
+          topFraction: 104 / 824,
+          durationSeconds: 34,
+          delaySeconds: 5,
+          reverse: true,
+          seconds: seconds,
+          screenSize: screenSize,
+        ),
+      if ((condition == 'cloudy' || condition == 'fog') && !night)
+        _ImageSkyLane(
+          asset: 'assets/sky/flappy-bird.png',
+          width: 30,
+          aspectRatio: 1036 / 1466,
+          topFraction: 112 / 824,
+          durationSeconds: 22,
+          delaySeconds: 4,
+          bobAmplitude: 4,
+          seconds: seconds,
+          screenSize: screenSize,
+        ),
       if ((timeOfDay == 'dawn' || timeOfDay == 'dusk') && calm)
         _SkyLane(
           sheet: _balloonSheet,
@@ -213,6 +394,7 @@ class _SkyDecor extends StatelessWidget {
           seconds: seconds,
           screenSize: screenSize,
         ),
+      if (condition == 'clear' && night) _ShootingStar(seconds: seconds),
     ];
     return IgnorePointer(child: Stack(children: lanes));
   }

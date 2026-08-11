@@ -24,19 +24,25 @@ class MascotWidget extends StatelessWidget {
   final String char; // 'fu' | 'nii' | 'cat'
   final String state; // clear | rain | storm | snow | night | sad
   final double size;
+  final bool useDefault;
 
-  const MascotWidget({super.key, required this.char, required this.state, required this.size});
+  const MascotWidget({
+    super.key,
+    required this.char,
+    required this.state,
+    required this.size,
+    this.useDefault = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (char == 'fu' || char == 'nii') {
-      return Image.asset(
-        'assets/mascots/${char}_$state.png',
-        width: size,
-        height: size,
-        filterQuality: FilterQuality.none,
-      );
+      final path = useDefault
+          ? 'assets/mascots/$char.png'
+          : 'assets/mascots/${char}_$state.png';
+      return Image.asset(path, width: size, height: size, filterQuality: FilterQuality.none);
     }
     return PixelSprite(mascot(state), size: size);
   }
 }
+

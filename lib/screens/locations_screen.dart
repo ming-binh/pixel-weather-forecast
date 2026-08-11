@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../data/geocoding_service.dart';
 import '../data/open_meteo_service.dart';
 import '../data/weather_data.dart';
 import '../logic/weather_logic.dart';
@@ -9,17 +12,20 @@ import '../theme/text_styles.dart';
 import '../widgets/mascot_widget.dart';
 import '../widgets/pixel_sprite.dart';
 
-/// Saved-places picker — mirrors the design's `isLoc` panel. Each row's
-/// temperature comes from the live [weather] map (keyed by city name),
-/// fetched once for all [appCities] on app start.
+/// Saved-places picker — mirrors the design's `isLoc` panel, extended with
+/// a live search against Open-Meteo's worldwide geocoding API (not just the
+/// 6 built-in [appCities]). Each saved row's temperature comes from the
+/// live [weather] map (keyed by city name), fetched once for all
+/// [appCities] on app start.
 class LocationsScreen extends StatefulWidget {
   final String currentCity;
   final String unit;
   final String char;
   final Map<String, WeatherSnapshot> weather;
   final Set<String> failedCities;
-  final ValueChanged<String> onPick;
+  final ValueChanged<CityInfo> onPick;
   final ValueChanged<String> onRetry;
+  final CityInfo? customCity;
 
   const LocationsScreen({
     super.key,
@@ -30,6 +36,7 @@ class LocationsScreen extends StatefulWidget {
     required this.failedCities,
     required this.onPick,
     required this.onRetry,
+    required this.customCity,
   });
 
   @override
@@ -39,17 +46,56 @@ class LocationsScreen extends StatefulWidget {
 class _LocationsScreenState extends State<LocationsScreen> {
   final _controller = TextEditingController();
   String _query = '';
+  Timer? _debounce;
+  List<CityInfo>? _results;
+  bool _searching = false;
+  String? _searchError;
 
   @override
   void dispose() {
     _controller.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _onQueryChanged(String v) {
+    setState(() => _query = v);
+    _debounce?.cancel();
+    if (v.trim().isEmpty) {
+      setState(() {
+        _results = null;
+        _searching = false;
+        _searchError = null;
+      });
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 400), () => _runSearch(v));
+  }
+
+  Future<void> _runSearch(String query) async {
+    setState(() {
+      _searching = true;
+      _searchError = null;
+    });
+    try {
+      final results = await searchPlaces(query);
+      if (!mounted || query != _query) return;
+      setState(() {
+        _results = results;
+        _searching = false;
+      });
+    } catch (_) {
+      if (!mounted || query != _query) return;
+      setState(() {
+        _searching = false;
+        _searchError = 'Không tìm được. Kiểm tra mạng rồi thử lại.';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final q = _query.trim().toLowerCase();
-    final filtered = appCities.where((c) => q.isEmpty || c.name.toLowerCase().contains(q)).toList();
+    final searchingByQuery = _query.trim().isNotEmpty;
 
     return Container(
       color: PixelColors.creamPanelBg,
@@ -69,9 +115,9 @@ class _LocationsScreenState extends State<LocationsScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    onChanged: (v) => setState(() => _query = v),
+                    onChanged: _onQueryChanged,
                     decoration: InputDecoration(
-                      hintText: 'Tìm thành phố…',
+                      hintText: 'Tìm thành phố khắp thế giới…',
                       hintStyle: PixelText.beVietnam(fontSize: 13, color: PixelColors.mutedGray),
                       border: InputBorder.none,
                       isDense: true,
@@ -79,46 +125,83 @@ class _LocationsScreenState extends State<LocationsScreen> {
                     style: PixelText.beVietnam(fontSize: 13),
                   ),
                 ),
+                if (_searching) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
               ],
             ),
           ),
           const SizedBox(height: 14),
-          Text('ĐÃ LƯU',
-              style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
-          const SizedBox(height: 9),
-          for (final c in filtered) ...[
-            _PlaceRow(
-              city: c,
-              unit: widget.unit,
-              active: c.name == widget.currentCity,
-              snapshot: widget.weather[c.name],
-              failed: widget.failedCities.contains(c.name),
-              onTap: () => widget.onPick(c.name),
-              onRetry: () => widget.onRetry(c.name),
-            ),
+          if (searchingByQuery) ...[
+            Text('KẾT QUẢ TÌM KIẾM',
+                style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
             const SizedBox(height: 9),
-          ],
-          if (filtered.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 22),
-              child: Column(
-                children: [
-                  MascotWidget(char: widget.char, state: 'sad', size: 64),
-                  const SizedBox(height: 8),
-                  Text('Không tìm thấy nơi nào tên vậy',
-                      style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 12.5)),
-                  const SizedBox(height: 4),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 30),
-                    child: Text(
-                      'Mèo đã lục hết bản đồ rồi. Thử gõ tên khác xem sao.',
-                      textAlign: TextAlign.center,
-                      style: PixelText.beVietnam(fontSize: 11, color: PixelColors.mutedGray),
+            if (_searchError != null)
+              Text(_searchError!, style: PixelText.beVietnam(fontSize: 11, color: PixelColors.errorRed))
+            else if (_results != null && _results!.isEmpty && !_searching)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 22),
+                child: Column(
+                  children: [
+                    MascotWidget(char: widget.char, state: 'sad', size: 64),
+                    const SizedBox(height: 8),
+                    Text('Không tìm thấy nơi nào tên vậy',
+                        style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 12.5)),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 30),
+                      child: Text(
+                        'Mèo đã lục hết bản đồ rồi. Thử gõ tên khác xem sao.',
+                        textAlign: TextAlign.center,
+                        style: PixelText.beVietnam(fontSize: 11, color: PixelColors.mutedGray),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              )
+            else
+              for (final c in _results ?? const <CityInfo>[]) ...[
+                _PlaceRow(
+                  city: c,
+                  unit: widget.unit,
+                  active: c.name == widget.currentCity,
+                  snapshot: widget.weather[c.name],
+                  failed: widget.failedCities.contains(c.name),
+                  onTap: () => widget.onPick(c),
+                  onRetry: () => widget.onRetry(c.name),
+                ),
+                const SizedBox(height: 9),
+              ],
+          ] else ...[
+            Text('ĐÃ LƯU',
+                style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
+            const SizedBox(height: 9),
+            for (final c in appCities) ...[
+              _PlaceRow(
+                city: c,
+                unit: widget.unit,
+                active: c.name == widget.currentCity,
+                snapshot: widget.weather[c.name],
+                failed: widget.failedCities.contains(c.name),
+                onTap: () => widget.onPick(c),
+                onRetry: () => widget.onRetry(c.name),
               ),
-            ),
+              const SizedBox(height: 9),
+            ],
+            if (widget.customCity != null && widget.customCity!.name == widget.currentCity) ...[
+              const SizedBox(height: 5),
+              Text('ĐANG DÙNG',
+                  style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
+              const SizedBox(height: 9),
+              _PlaceRow(
+                city: widget.customCity!,
+                unit: widget.unit,
+                active: true,
+                snapshot: widget.weather[widget.currentCity],
+                failed: widget.failedCities.contains(widget.currentCity),
+                onTap: () {},
+                onRetry: () => widget.onRetry(widget.currentCity),
+              ),
+            ],
+          ],
         ],
       ),
     );
@@ -147,7 +230,11 @@ class _PlaceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: snapshot != null ? onTap : (failed ? onRetry : null),
+      // Tapping always selects the city (which triggers its weather fetch
+      // if it hasn't loaded yet — search results never have one until
+      // picked) — except when it already failed once, where tapping
+      // retries that fetch instead of re-selecting a city we're already on.
+      onTap: failed ? onRetry : onTap,
       child: Container(
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
@@ -164,7 +251,7 @@ class _PlaceRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(city.name, style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 13)),
-                  Text(city.sub, style: PixelText.beVietnam(fontSize: 10.5, color: PixelColors.mutedGray)),
+                  if (city.sub.isNotEmpty) Text(city.sub, style: PixelText.beVietnam(fontSize: 10.5, color: PixelColors.mutedGray)),
                 ],
               ),
             ),

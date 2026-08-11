@@ -164,7 +164,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                MascotWidget(char: char, state: 'clear', size: 56),
+                MascotWidget(char: char, state: 'clear', size: 56, useDefault: true),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Column(
@@ -224,7 +224,7 @@ class _CharCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            MascotWidget(char: charKey, state: 'clear', size: 44),
+            MascotWidget(char: charKey, state: 'clear', size: 44, useDefault: true),
             const SizedBox(height: 6),
             Text(info.name, style: PixelText.pixelify(fontSize: 11, fontWeight: FontWeight.w700)),
             const SizedBox(height: 2),

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 
 import 'data/open_meteo_service.dart';
+import 'data/prefs_service.dart';
 import 'data/weather_data.dart';
 import 'screens/day_sheet.dart';
 import 'screens/home_screen.dart';
@@ -43,6 +44,16 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
   final Map<String, WeatherSnapshot> _weather = {};
   final Set<String> _failedCities = {};
 
+  /// The current city when it isn't one of the fixed [appCities] — i.e. it
+  /// came from the search box's geocoding results, or was restored from a
+  /// previous session's search pick. Needed because such a city's
+  /// coordinates aren't known anywhere else.
+  CityInfo? _customCity;
+
+  bool _splashMinTimeElapsed = false;
+  bool _prefsRestored = false;
+  String _postSplashScreen = 'home';
+
   Timer? _splashTimer;
   Timer? _clockTimer;
 
@@ -52,7 +63,8 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
     _now = DateTime.now();
     _tod = _autoTimeOfDay(_now.hour);
     _splashTimer = Timer(const Duration(milliseconds: 2100), () {
-      if (mounted) setState(() => _screen = 'home');
+      _splashMinTimeElapsed = true;
+      _maybeFinishSplash();
     });
     _clockTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() => _now = DateTime.now());
@@ -60,6 +72,50 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
     for (final c in appCities) {
       _loadCity(c);
     }
+    _restoreSavedPrefs();
+  }
+
+  /// Re-applies whatever the user picked last session (unit/theme/mascot),
+  /// and the saved city if there is one. On a genuinely first launch (no
+  /// city ever saved), sends the user to the location picker instead of
+  /// silently defaulting to Đà Lạt.
+  Future<void> _restoreSavedPrefs() async {
+    final prefs = await loadPrefs();
+    if (!mounted) return;
+    if (prefs.unit != null) setState(() => _unit = prefs.unit!);
+    if (prefs.char != null) setState(() => _char = prefs.char!);
+    if (prefs.notif != null) setState(() => _notif = prefs.notif!);
+    if (prefs.theme != null && prefs.theme != _theme) _pickTheme(prefs.theme!);
+
+    final saved = prefs.city;
+    if (saved == null) {
+      _postSplashScreen = 'loc';
+    } else {
+      setState(() => _city = saved.name);
+      if (!appCities.any((c) => c.name == saved.name)) {
+        setState(() => _customCity = saved);
+        _loadCity(saved);
+      }
+      _postSplashScreen = 'home';
+    }
+    _prefsRestored = true;
+    _maybeFinishSplash();
+  }
+
+  void _maybeFinishSplash() {
+    if (_splashMinTimeElapsed && _prefsRestored && mounted) {
+      setState(() => _screen = _postSplashScreen);
+    }
+  }
+
+  /// Resolves a city name back to its coordinates — either a fixed entry in
+  /// [appCities] or the dynamically-picked [_customCity].
+  CityInfo? _resolveCity(String name) {
+    if (_customCity != null && _customCity!.name == name) return _customCity;
+    for (final c in appCities) {
+      if (c.name == name) return c;
+    }
+    return null;
   }
 
   @override
@@ -110,6 +166,34 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
           _tod = _autoTimeOfDay(_now.hour);
       }
     });
+    unawaited(saveTheme(label));
+  }
+
+  void _setUnit(String u) {
+    setState(() => _unit = u);
+    unawaited(saveUnit(u));
+  }
+
+  void _toggleNotif() {
+    setState(() => _notif = !_notif);
+    unawaited(saveNotif(_notif));
+  }
+
+  void _pickChar(String c) {
+    setState(() => _char = c);
+    unawaited(saveChar(c));
+  }
+
+  void _pickCity(CityInfo city) {
+    final isBuiltIn = appCities.any((c) => c.name == city.name);
+    setState(() {
+      _city = city.name;
+      if (!isBuiltIn) _customCity = city;
+      _cond = _weather[city.name]?.cond ?? _cond;
+      _screen = 'home';
+    });
+    if (!isBuiltIn) _loadCity(city);
+    unawaited(saveCity(city));
   }
 
   Color get _chromeColor =>
@@ -153,7 +237,10 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
           return _LoadingOrError(
             char: _char,
             failed: _failedCities.contains(_city),
-            onRetry: () => _loadCity(appCities.firstWhere((c) => c.name == _city)),
+            onRetry: () {
+              final c = _resolveCity(_city);
+              if (c != null) _loadCity(c);
+            },
           );
         }
         return HomeScreen(
@@ -174,12 +261,12 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
           char: _char,
           weather: _weather,
           failedCities: _failedCities,
-          onPick: (city) => setState(() {
-            _city = city;
-            _cond = _weather[city]?.cond ?? _cond;
-            _screen = 'home';
-          }),
-          onRetry: (city) => _loadCity(appCities.firstWhere((c) => c.name == city)),
+          onPick: _pickCity,
+          onRetry: (city) {
+            final c = _resolveCity(city);
+            if (c != null) _loadCity(c);
+          },
+          customCity: _customCity,
         );
       case 'set':
         return SettingsScreen(
@@ -187,10 +274,10 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
           notif: _notif,
           theme: _theme,
           char: _char,
-          onSetUnit: (u) => setState(() => _unit = u),
-          onToggleNotif: () => setState(() => _notif = !_notif),
+          onSetUnit: _setUnit,
+          onToggleNotif: _toggleNotif,
           onPickTheme: _pickTheme,
-          onPickChar: (c) => setState(() => _char = c),
+          onPickChar: _pickChar,
           onOpenGuide: () => _goto('guide'),
         );
       case 'guide':

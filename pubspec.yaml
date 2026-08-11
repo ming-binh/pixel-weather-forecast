@@ -40,6 +40,7 @@ dependencies:
 
   # Talks to the Open-Meteo forecast API (no key required).
   http: ^1.2.2
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -63,9 +64,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Fu's and Nii's hand-drawn portrait sprites (one per weather state).
+  # Fu's and Nii's hand-drawn portrait sprites (one per weather state), plus
+  # the background-cloud and flapping-bird sky decorations.
   assets:
     - assets/mascots/
+    - assets/sky/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

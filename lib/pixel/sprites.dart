@@ -460,6 +460,29 @@ SpriteSheet balloonSheet() {
   });
 }
 
+/// A small UFO with blinking lights, used as a sky decoration during storms.
+SpriteSheet ufoSheet() {
+  return _sheetOf(32, 2, 0.6, (g, f) {
+    disc(g, 16, 8, 7.4, hexColors(['#1F4A82', '#2C5A9C', '#3E70B4']), rim: hexColor('#8FC1F2'));
+    disc(g, 20, 6, 2.6, hexColors(['#6FA9E0', '#8FC1F2', '#BBDCF7']));
+    rectFill(g, 7, 13, 18, 3, hexColor('#B7B7B7'));
+    rectFill(g, 7, 13, 18, 1, hexColor('#D9D9D9'));
+    rectFill(g, 4, 16, 24, 3, hexColor('#3A3A3A'));
+    rectFill(g, 4, 16, 24, 1, hexColor('#606060'));
+    rectFill(g, 9, 17, 14, 3, hexColor('#6B6B6B'));
+    const lights = [[6, 17], [10, 18], [14, 17], [18, 18], [22, 17], [25, 18]];
+    for (var i = 0; i < lights.length; i++) {
+      final p = lights[i];
+      final on = f == 0 ? i % 2 == 0 : i % 2 == 1;
+      put(g, p[0], p[1], on ? hexColor('#5FBE87') : hexColor('#2E6B45'));
+    }
+    rectFill(g, 13, 20, 6, 1, hexColor('#7ED2A0'));
+    rectFill(g, 14, 22, 4, 1, hexColor('#7ED2A0'));
+    rectFill(g, 15, 24, 2, 1, hexColor('#7ED2A0'));
+    put(g, 15, 26, hexColor('#7ED2A0'));
+  });
+}
+
 /// 24x24 mascot sprite (the procedural "Mèo Mây" fallback for characters
 /// with no bespoke art). `state` is one of: clear, rain, snow, storm, night,
 /// sad.
