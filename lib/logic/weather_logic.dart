@@ -1,6 +1,33 @@
 // Shared derived-state helpers, ported from the design's Component methods
 // (`effIcon`, `mascotState`, `conv`) so every screen stays consistent.
 
+/// The default (theme = 'Tự động') time-of-day bucket for a given hour.
+String autoTimeOfDay(int hour) {
+  if (hour < 5) return 'night';
+  if (hour < 7) return 'dawn';
+  if (hour < 17) return 'day';
+  if (hour < 19) return 'dusk';
+  return 'night';
+}
+
+/// Resolves the Settings screen's theme label to a time-of-day key. Shared
+/// between the running app and the background widget-refresh task so both
+/// pick the same sky for a locked (non-'Tự động') theme.
+String todForTheme(String theme, int hour) {
+  switch (theme) {
+    case 'Bình minh':
+      return 'dawn';
+    case 'Ban ngày':
+      return 'day';
+    case 'Hoàng hôn':
+      return 'dusk';
+    case 'Ban đêm':
+      return 'night';
+    default:
+      return autoTimeOfDay(hour);
+  }
+}
+
 /// Picks which weather icon sprite to draw for the current condition + time
 /// of day.
 String effIcon(String cond, String tod) {

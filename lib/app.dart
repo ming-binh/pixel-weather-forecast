@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 
+import 'data/home_widget_service.dart';
 import 'data/open_meteo_service.dart';
 import 'data/prefs_service.dart';
 import 'data/weather_data.dart';
+import 'logic/weather_logic.dart';
 import 'screens/day_sheet.dart';
 import 'screens/home_screen.dart';
 import 'screens/locations_screen.dart';
@@ -61,7 +63,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
   void initState() {
     super.initState();
     _now = DateTime.now();
-    _tod = _autoTimeOfDay(_now.hour);
+    _tod = autoTimeOfDay(_now.hour);
     _splashTimer = Timer(const Duration(milliseconds: 2100), () {
       _splashMinTimeElapsed = true;
       _maybeFinishSplash();
@@ -134,18 +136,20 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
         _weather[c.name] = snap;
         if (c.name == _city) _cond = snap.cond;
       });
+      if (c.name == _city) _pushWidgetUpdate();
     } catch (_) {
       if (!mounted) return;
       setState(() => _failedCities.add(c.name));
     }
   }
 
-  static String _autoTimeOfDay(int hour) {
-    if (hour < 5) return 'night';
-    if (hour < 7) return 'dawn';
-    if (hour < 17) return 'day';
-    if (hour < 19) return 'dusk';
-    return 'night';
+  /// Re-renders the Android home-screen widget's snapshot with whatever the
+  /// currently selected city/settings show right now. No-ops until that
+  /// city's weather has actually loaded once.
+  void _pushWidgetUpdate() {
+    final snap = _weather[_city];
+    if (snap == null) return;
+    unawaited(updateWeatherWidget(weather: snap, city: _city, cond: _cond, tod: _tod, unit: _unit, char: _char));
   }
 
   void _goto(String screen) => setState(() => _screen = screen);
@@ -153,25 +157,16 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
   void _pickTheme(String label) {
     setState(() {
       _theme = label;
-      switch (label) {
-        case 'Bình minh':
-          _tod = 'dawn';
-        case 'Ban ngày':
-          _tod = 'day';
-        case 'Hoàng hôn':
-          _tod = 'dusk';
-        case 'Ban đêm':
-          _tod = 'night';
-        default:
-          _tod = _autoTimeOfDay(_now.hour);
-      }
+      _tod = todForTheme(label, _now.hour);
     });
     unawaited(saveTheme(label));
+    _pushWidgetUpdate();
   }
 
   void _setUnit(String u) {
     setState(() => _unit = u);
     unawaited(saveUnit(u));
+    _pushWidgetUpdate();
   }
 
   void _toggleNotif() {
@@ -182,6 +177,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
   void _pickChar(String c) {
     setState(() => _char = c);
     unawaited(saveChar(c));
+    _pushWidgetUpdate();
   }
 
   void _pickCity(CityInfo city) {
@@ -194,6 +190,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
     });
     if (!isBuiltIn) _loadCity(city);
     unawaited(saveCity(city));
+    _pushWidgetUpdate();
   }
 
   Color get _chromeColor =>

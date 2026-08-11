@@ -42,6 +42,11 @@ dependencies:
   http: ^1.2.2
   shared_preferences: ^2.5.5
 
+  # Bridges data to the Android home-screen widget, and runs the periodic
+  # background refresh that keeps it up to date while the app is closed.
+  home_widget: ^0.7.0
+  workmanager: ^0.6.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
