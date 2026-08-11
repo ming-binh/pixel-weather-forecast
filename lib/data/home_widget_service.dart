@@ -31,6 +31,7 @@ Future<void> updateWeatherWidget({
     iconKind: effIcon(cond, tod),
     mascotChar: char,
     mascotState: mascotStateFor(cond, tod),
+    tod: tod,
   );
   await HomeWidget.renderFlutterWidget(
     snapshot,

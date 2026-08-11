@@ -483,6 +483,12 @@ SpriteSheet ufoSheet() {
   });
 }
 
+/// A single static cloud shape (no animation) — used as pure background
+/// decoration behind the home-screen widget's weather icon.
+SpriteSheet decorCloudSheet() {
+  return _sheetOf(32, 1, 1, (g, f) => _cloudBig(g, cloudRamp, -2, 4, hexColor('#FFFFFF')));
+}
+
 /// 24x24 mascot sprite (the procedural "Mèo Mây" fallback for characters
 /// with no bespoke art). `state` is one of: clear, rain, snow, storm, night,
 /// sad.
