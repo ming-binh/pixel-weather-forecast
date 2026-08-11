@@ -281,7 +281,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
           onOpenGuide: () => _goto('guide'),
         );
       case 'guide':
-        return const StyleGuideScreen();
+        return StyleGuideScreen(char: _char, onGoHome: () => _goto('home'));
       default:
         return SplashScreen(char: _char);
     }

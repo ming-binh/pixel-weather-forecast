@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../data/weather_data.dart';
@@ -7,32 +5,44 @@ import '../pixel/pixel_grid.dart';
 import '../pixel/sprites.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../widgets/bobbing.dart';
+import '../widgets/mascot_widget.dart';
 import '../widgets/pixel_sprite.dart';
 
-const _mascotSheet = [
-  ['clear', 'Nắng · đeo kính râm'],
-  ['rain', 'Mưa · cầm ô, ướt nhẹp'],
-  ['snow', 'Lạnh · khăn quàng, run'],
-  ['storm', 'Giông · lo lắng, núp mây'],
-  ['night', 'Đêm · mũ ngủ, ngáp'],
-  ['sad', 'Không có dữ liệu'],
+const _todBlurbs = {
+  'dawn': 'Tím hồng dịu dàng, cả thành phố còn ngủ',
+  'day': 'Xanh trong, nắng rực rỡ cả ngày',
+  'dusk': 'Cam tím giao hòa, tan tầm nên thơ',
+  'night': 'Sao lấp lánh, sao băng bất ngờ ghé qua',
+};
+
+const _weatherLegend = [
+  ['clear', 'Nắng', 'Chim bay ngang, mây trôi nhẹ'],
+  ['partly', 'Nắng có mây', 'Vài đám mây ghé chơi'],
+  ['cloudy', 'Nhiều mây', 'Chim vàng tinh nghịch bay lượn'],
+  ['rain', 'Mưa', 'Giọt nước rơi đều, nhớ mang ô'],
+  ['storm', 'Giông', 'UFO bí ẩn ghé qua trên mây'],
+  ['snow', 'Tuyết', 'Bông tuyết rơi lất phất'],
+  ['fog', 'Sương mù', 'Mờ ảo, chim len lỏi qua sương'],
+  ['night', 'Đêm quang', 'Sao băng vút ngang bầu trời'],
 ];
 
-const _iconSheet = [
-  ['clear', 'Nắng'],
-  ['partly', 'Nắng có mây'],
-  ['cloudy', 'Nhiều mây'],
-  ['rain', 'Mưa'],
-  ['storm', 'Giông'],
-  ['snow', 'Tuyết'],
-  ['fog', 'Sương mù'],
-  ['night', 'Đêm quang'],
+const _easterEggs = [
+  'Chim nhỏ bay ngang lúc trời quang hoặc nhiều mây',
+  'Ba tầng mây trôi ngang, mỗi tầng một tốc độ',
+  'UFO lạ ghé thăm mỗi khi có giông bão',
+  'Chim vàng flappy lượn lờ lúc nhiều mây hay sương mù',
+  'Khinh khí cầu bay lúc bình minh & hoàng hôn',
 ];
 
-/// Design reference sheet — mirrors the `isGuide` panel: color palette,
-/// mascot poses, weather icon set, component states, and typography.
+/// Welcome / about screen — introduces the 4 sky palettes, the weather icon
+/// set, the mascot companions, and a few background "easter egg" details.
+/// Replaces the old dev-only design reference sheet, mirrors the design's
+/// `isGuide` panel.
 class StyleGuideScreen extends StatelessWidget {
-  const StyleGuideScreen({super.key});
+  final String char;
+  final VoidCallback onGoHome;
+  const StyleGuideScreen({super.key, required this.char, required this.onGoHome});
 
   @override
   Widget build(BuildContext context) {
@@ -41,166 +51,146 @@ class StyleGuideScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 52, 16, 100),
       child: ListView(
         children: [
-          Text('STYLE GUIDE', style: PixelText.pixelify(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+          Column(
+            children: [
+              Bobbing.bob2(
+                duration: const Duration(milliseconds: 1100),
+                child: MascotWidget(char: char, state: 'clear', size: 84, useDefault: true),
+              ),
+              const SizedBox(height: 9),
+              Text('CHÀO MỪNG ĐẾN\nPIXEL WEATHER',
+                  textAlign: TextAlign.center,
+                  style: PixelText.pixelify(fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: 1.1).copyWith(height: 1.3)),
+              const SizedBox(height: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 270),
+                child: Text(
+                  'Ngắm mây trôi, nghe Fu & Nii mách chuyện trời, và khám phá 4 bầu trời đổi màu theo giờ thực.',
+                  textAlign: TextAlign.center,
+                  style: PixelText.beVietnam(fontSize: 11.5, height: 1.5, color: PixelColors.mutedGray),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
-          Text('BẢNG MÀU: GIỜ × THỜI TIẾT',
+          Text('4 BẦU TRỜI, MỘT NGÀY',
               style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
           const SizedBox(height: 8),
-          for (final todKey in timePaletteOrder) ...[
-            _PaletteCard(todKey: todKey),
-            const SizedBox(height: 8),
-          ],
-          const SizedBox(height: 8),
-          Text('SPRITE SHEET MASCOT (24×24, SCALE ×3)',
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1.35,
+            children: [
+              for (final todKey in timePaletteOrder) _TimeCard(todKey: todKey),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text('MỌI KIỂU TRỜI, MỘT CÁI NHÌN',
               style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.all(11),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: PixelColors.cream, border: Border.all(color: PixelColors.ink, width: 3)),
             child: GridView.count(
-              crossAxisCount: 3,
+              crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: .82,
+              crossAxisSpacing: 8,
+              childAspectRatio: 2.6,
               children: [
-                for (final m in _mascotSheet)
-                  Column(
+                for (final w in _weatherLegend)
+                  Row(
                     children: [
-                      Container(
-                        width: 72,
-                        height: 72,
-                        color: PixelColors.skeletonBg,
-                        child: PixelSprite(mascot(m[0]), size: 72),
+                      AnimatedPixelSprite(weatherIconSheet(w[0]), size: 36),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(w[1], style: PixelText.pixelify(fontSize: 10, fontWeight: FontWeight.w700)),
+                            Text(w[2], style: PixelText.beVietnam(fontSize: 8.8, height: 1.3, color: PixelColors.mutedGray)),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 5),
-                      Text(m[1], textAlign: TextAlign.center, style: PixelText.beVietnam(fontSize: 10, height: 1.3)),
                     ],
                   ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          Text('ICON SET THỜI TIẾT (32×32, ĐỘNG)',
+          Text('BẠN ĐỒNG HÀNH CỦA BẠN',
               style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(11),
-            decoration: BoxDecoration(color: PixelColors.cream, border: Border.all(color: PixelColors.ink, width: 3)),
-            child: GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: .95,
-              children: [
-                for (final i in _iconSheet)
-                  Column(
+          Column(
+            children: [
+              for (final entry in mascotChars.entries) ...[
+                if (entry.key != mascotChars.keys.first) const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: PixelColors.cream, border: Border.all(color: PixelColors.ink, width: 3)),
+                  child: Row(
                     children: [
-                      AnimatedPixelSprite(weatherIconSheet(i[0]), size: 48),
-                      const SizedBox(height: 4),
-                      Text(i[1], textAlign: TextAlign.center, style: PixelText.beVietnam(fontSize: 9.5, color: PixelColors.mutedGray)),
+                      Bobbing.bob2(
+                        duration: const Duration(milliseconds: 1300),
+                        child: MascotWidget(char: entry.key, state: 'clear', size: 68, useDefault: true),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(entry.value.name, style: PixelText.pixelify(fontSize: 12, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 3),
+                            Text('${entry.value.sub} · ${entry.value.tag}',
+                                style: PixelText.beVietnam(fontSize: 10.5, height: 1.4, color: PixelColors.mutedGray)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
+                ),
               ],
-            ),
+            ],
           ),
           const SizedBox(height: 16),
-          Text('COMPONENT STATES',
+          Text('CHI TIẾT NHỎ, ĐỂ BẠN TỰ KHÁM PHÁ',
               style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .6, color: PixelColors.mutedGray)),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.all(11),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: PixelColors.cream, border: Border.all(color: PixelColors.ink, width: 3)),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _StateChip('NORMAL', PixelColors.accentOrange, PixelColors.ink, hasShadow: true),
-                    _StateChip('PRESSED', const Color(0xFFD98B2B), PixelColors.ink),
-                    _StateChip('DISABLED', const Color(0xFFDCD3BE), const Color(0xFF8E8B7C), borderColor: const Color(0xFFA9A292)),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                      decoration: BoxDecoration(color: PixelColors.accentOrange, border: Border.all(color: PixelColors.ink, width: 3)),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const _SpinningPixel(),
-                          const SizedBox(width: 7),
-                          Text('LOADING', style: PixelText.pixelify(fontSize: 11, fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                _EggRow(icon: AnimatedPixelSprite(birdSheet(), size: 26), label: _easterEggs[0]),
                 const SizedBox(height: 9),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        color: PixelColors.skeletonBg,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Card · skeleton', style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, color: PixelColors.mutedGray)),
-                            const SizedBox(height: 7),
-                            Container(height: 10, color: PixelColors.skeletonBar),
-                            const SizedBox(height: 5),
-                            FractionallySizedBox(
-                              alignment: Alignment.centerLeft,
-                              widthFactor: .6,
-                              child: Container(height: 10, color: PixelColors.skeletonBar),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: PixelColors.errorPink, border: Border.all(color: PixelColors.errorRed, width: 2)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Card · lỗi dữ liệu', style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 10.5, color: PixelColors.errorRed)),
-                            const SizedBox(height: 5),
-                            Text('Mất mạng rồi. Chạm để thử lại.',
-                                style: PixelText.beVietnam(fontSize: 10.5, height: 1.35)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                _EggRow(icon: _eggImage('assets/sky/cloud-sm.png', 26), label: _easterEggs[1]),
+                const SizedBox(height: 9),
+                _EggRow(icon: AnimatedPixelSprite(ufoSheet(), size: 34), label: _easterEggs[2]),
+                const SizedBox(height: 9),
+                _EggRow(icon: _eggImage('assets/sky/flappy-bird.png', 22), label: _easterEggs[3]),
+                const SizedBox(height: 9),
+                _EggRow(icon: AnimatedPixelSprite(balloonSheet(), size: 22), label: _easterEggs[4]),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(11),
-            decoration: BoxDecoration(color: PixelColors.cream, border: Border.all(color: PixelColors.ink, width: 3)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('TYPOGRAPHY', style: PixelText.pixelify(fontSize: 11, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text('28° 14:00 UV 7', style: PixelText.pixelify(fontSize: 30)),
-                Text('Pixelify Sans — số liệu, tiêu đề, nhãn không dấu',
-                    style: PixelText.beVietnam(fontSize: 10.5, color: PixelColors.mutedGray)),
-                const SizedBox(height: 4),
-                Text('Trời hôm nay nắng đẹp, nhớ mang mũ nhé!', style: PixelText.beVietnam(fontSize: 13)),
-                Text('Be Vietnam Pro — mọi câu tiếng Việt có dấu, đoạn gợi ý AI',
-                    style: PixelText.beVietnam(fontSize: 10.5, color: PixelColors.mutedGray)),
-              ],
+          GestureDetector(
+            onTap: onGoHome,
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: PixelColors.accentOrange,
+                border: Border.all(color: PixelColors.ink, width: 3),
+                boxShadow: const [BoxShadow(color: Color(0x592B2B44), offset: Offset(0, 6))],
+              ),
+              child: Text('BẮT ĐẦU NGẮM TRỜI →',
+                  style: PixelText.pixelify(fontSize: 12.5, fontWeight: FontWeight.w700, letterSpacing: 1)),
             ),
           ),
         ],
@@ -209,118 +199,64 @@ class StyleGuideScreen extends StatelessWidget {
   }
 }
 
-class _PaletteCard extends StatelessWidget {
+Widget _eggImage(String asset, double size) {
+  return SizedBox(
+    width: size,
+    height: size,
+    child: Image.asset(
+      asset,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.none,
+      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+    ),
+  );
+}
+
+class _TimeCard extends StatelessWidget {
   final String todKey;
-  const _PaletteCard({required this.todKey});
+  const _TimeCard({required this.todKey});
 
   @override
   Widget build(BuildContext context) {
     final palette = timePalettes[todKey]!;
     return Container(
-      padding: const EdgeInsets.all(9),
-      decoration: BoxDecoration(color: PixelColors.cream, border: Border.all(color: PixelColors.ink, width: 3)),
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        border: Border.all(color: PixelColors.ink, width: 3),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [hexColor(palette.stops[0]), hexColor(palette.stops[2])],
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(palette.label, style: PixelText.pixelify(fontSize: 11, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          for (final condKey in weatherModOrder) ...[
-            _PaletteRow(stops: palette.stops, condKey: condKey),
-            const SizedBox(height: 5),
-          ],
+          AnimatedPixelSprite(weatherIconSheet(todKey == 'night' ? 'night' : 'clear'), size: 26),
+          const SizedBox(height: 7),
+          Text(palette.label, style: PixelText.pixelify(fontSize: 10.5, fontWeight: FontWeight.w700, color: PixelColors.cream)),
+          const SizedBox(height: 2),
+          Text(_todBlurbs[todKey]!, style: PixelText.beVietnam(fontSize: 9.5, height: 1.35, color: PixelColors.cream)),
         ],
       ),
     );
   }
 }
 
-class _PaletteRow extends StatelessWidget {
-  final List<String> stops;
-  final String condKey;
-  const _PaletteRow({required this.stops, required this.condKey});
+class _EggRow extends StatelessWidget {
+  final Widget icon;
+  final String label;
+  const _EggRow({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    final applied = stops.map((h) => applyMod(h, condKey)).toList();
     return Row(
       children: [
-        Container(
-          width: 56,
-          height: 22,
-          decoration: BoxDecoration(
-            border: Border.all(color: PixelColors.ink, width: 2),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [hexColor(applied[0]), hexColor(applied[2])],
-            ),
-          ),
-        ),
-        const SizedBox(width: 7),
-        SizedBox(width: 64, child: Text(weatherMods[condKey]!.label, style: PixelText.beVietnam(fontSize: 10.5))),
-        Expanded(
-          child: Text('${applied[0]} → ${applied[3]}',
-              style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: PixelColors.mutedGray)),
-        ),
+        SizedBox(width: 34, child: Center(child: icon)),
+        const SizedBox(width: 10),
+        Expanded(child: Text(label, style: PixelText.beVietnam(fontSize: 10.5, height: 1.4))),
       ],
-    );
-  }
-}
-
-class _StateChip extends StatelessWidget {
-  final String label;
-  final Color bg;
-  final Color fg;
-  final Color borderColor;
-  final bool hasShadow;
-
-  const _StateChip(this.label, this.bg, this.fg, {this.borderColor = PixelColors.ink, this.hasShadow = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border.all(color: borderColor, width: 3),
-        boxShadow: hasShadow ? const [BoxShadow(color: Color(0x592B2B44), offset: Offset(0, 5))] : null,
-      ),
-      child: Text(label, style: PixelText.pixelify(fontSize: 11, fontWeight: FontWeight.w700, color: fg)),
-    );
-  }
-}
-
-class _SpinningPixel extends StatefulWidget {
-  const _SpinningPixel();
-
-  @override
-  State<_SpinningPixel> createState() => _SpinningPixelState();
-}
-
-class _SpinningPixelState extends State<_SpinningPixel> with SingleTickerProviderStateMixin {
-  late final AnimationController _c;
-
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat();
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (context, child) {
-        final step = (_c.value * 4).floor() % 4;
-        return Transform.rotate(angle: step * math.pi / 2, child: child);
-      },
-      child: Container(width: 10, height: 10, color: PixelColors.ink),
     );
   }
 }

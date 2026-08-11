@@ -190,7 +190,7 @@ class SettingsScreen extends StatelessWidget {
                 border: Border.all(color: PixelColors.ink, width: 3),
                 boxShadow: const [BoxShadow(color: Color(0x592B2B44), offset: Offset(0, 6))],
               ),
-              child: Text('XEM STYLE GUIDE & SPRITE SHEET',
+              child: Text('KHÁM PHÁ ỨNG DỤNG',
                   style: PixelText.pixelify(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1)),
             ),
           ),
