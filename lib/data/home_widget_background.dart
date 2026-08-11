@@ -28,7 +28,7 @@ void widgetRefreshCallbackDispatcher() {
         cond: snap.cond,
         tod: tod,
         unit: prefs.unit ?? 'C',
-        char: prefs.char ?? 'cat',
+        char: prefs.char ?? 'fu',
       );
     } catch (_) {
       // A transient network/API failure in the background shouldn't wipe

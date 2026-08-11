@@ -39,7 +39,7 @@ class _PixelWeatherAppState extends State<PixelWeatherApp> {
   String _unit = 'C';
   bool _notif = true;
   String _theme = 'Tự động';
-  String _char = 'cat';
+  String _char = 'fu';
   String _city = 'Đà Lạt';
   late DateTime _now;
 

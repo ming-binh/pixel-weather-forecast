@@ -143,13 +143,16 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 Text('Chọn bạn đồng hành', style: PixelText.beVietnam(fontWeight: FontWeight.w600, fontSize: 12.5)),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    for (final entry in mascotChars.entries) ...[
-                      if (entry.key != mascotChars.keys.first) const SizedBox(width: 8),
-                      Expanded(child: _CharCard(charKey: entry.key, info: entry.value, active: char == entry.key, onTap: () => onPickChar(entry.key))),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final entry in mascotChars.entries) ...[
+                        if (entry.key != mascotChars.keys.first) const SizedBox(width: 8),
+                        Expanded(child: _CharCard(charKey: entry.key, info: entry.value, active: char == entry.key, onTap: () => onPickChar(entry.key))),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -223,6 +226,7 @@ class _CharCard extends StatelessWidget {
           border: Border.all(color: active ? PixelColors.accentOrange : PixelColors.ink, width: 3),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             MascotWidget(char: charKey, state: 'clear', size: 44, useDefault: true),
             const SizedBox(height: 6),

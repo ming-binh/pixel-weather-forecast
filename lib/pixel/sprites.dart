@@ -12,26 +12,9 @@ final List<Color> sunRamp = hexColors(['#C9761B', '#E89A2B', '#F7C244', '#FFDE7A
 final List<Color> cloudRamp = hexColors(['#8E9DB4', '#AEBCCD', '#CBD7E4', '#E8EFF6', '#FFFFFF']);
 final List<Color> darkCloudRamp = hexColors(['#4C5468', '#5F6A80', '#767F95', '#8D95AA', '#A3AABD']);
 final List<Color> moonRamp = hexColors(['#B7B3D6', '#CFCBE8', '#E4E1F5', '#F3F1FF', '#FFFFFF']);
-final List<Color> furRamp = hexColors(['#B9C6DA', '#D3DEEC', '#E6EEF8', '#F6FAFF', '#FFFFFF']);
-final List<Color> snowFurRamp = hexColors(['#A9BBD2', '#C3D2E5', '#DAE6F3', '#EDF4FC', '#FFFFFF']);
 final List<Color> stormRamp = hexColors(['#333A4E', '#414A61', '#525C76', '#65708C', '#7B85A2']);
 final List<Color> fogRamp = hexColors(['#AEB6C2', '#C2C9D3', '#D6DCE4', '#E9EDF2', '#F9FBFC']);
 final Color ink = hexColor('#2B2B44');
-
-void _bolt(PixelGrid g, num x, num y, Color c1, Color c2) {
-  const pts = [
-    [3, 0], [2, 1], [2, 2], [1, 3], [3, 3], [2, 4], [2, 5], [1, 6], [4, 2], [3, 4],
-  ];
-  for (final p in pts) {
-    put(g, x + p[0], y + p[1], c1);
-  }
-  const pts2 = [
-    [3, 1], [3, 2], [2, 3], [2, 6],
-  ];
-  for (final p in pts2) {
-    put(g, x + p[0], y + p[1], c2);
-  }
-}
 
 void _rays(PixelGrid g, num cx, num cy, num r, double phase, Color c1, Color c2) {
   for (var i = 0; i < 8; i++) {
@@ -487,112 +470,6 @@ SpriteSheet ufoSheet() {
 /// decoration behind the home-screen widget's weather icon.
 SpriteSheet decorCloudSheet() {
   return _sheetOf(32, 1, 1, (g, f) => _cloudBig(g, cloudRamp, -2, 4, hexColor('#FFFFFF')));
-}
-
-/// 24x24 mascot sprite (the procedural "Mèo Mây" fallback for characters
-/// with no bespoke art). `state` is one of: clear, rain, snow, storm, night,
-/// sad.
-PixelGrid mascot(String state) {
-  final g = PixelGrid(24, 24);
-  final body = state == 'snow' ? snowFurRamp : furRamp;
-
-  disc(g, 8, 18, 4.4, body);
-  disc(g, 15, 18, 4, body);
-  disc(g, 11.5, 17, 5, body, rim: hexColor('#FFFFFF'));
-  rectFill(g, 4, 18, 16, 4, body[2]);
-  for (var x = 4; x < 20; x++) {
-    put(g, x, 21, body[0]);
-    put(g, x, 20, body[1]);
-  }
-  for (final cx in const [7.5, 15.5]) {
-    for (var j = 0; j < 4; j++) {
-      final w = j + 2;
-      for (var i = 0; i < w; i++) {
-        put(g, (cx - w / 2).round() + i, 3 + j, j < 2 ? body[4] : body[3]);
-      }
-    }
-    put(g, cx.round(), 5, hexColor('#F2A0A0'));
-    put(g, cx.round(), 6, hexColor('#EE8FA0'));
-  }
-  disc(g, 11.5, 10.5, 5.2, body, rim: hexColor('#FFFFFF'));
-
-  if (state == 'night') {
-    rectFill(g, 8, 10, 3, 1, ink);
-    rectFill(g, 13, 10, 3, 1, ink);
-  } else if (state == 'storm') {
-    disc(g, 9, 10, 1.4, const [Color(0xFF2B2B44)]);
-    disc(g, 14, 10, 1.4, const [Color(0xFF2B2B44)]);
-    put(g, 9, 9, hexColor('#FFFFFF'));
-    put(g, 14, 9, hexColor('#FFFFFF'));
-    rectFill(g, 7, 8, 3, 1, hexColor('#8E9DB4'));
-    rectFill(g, 13, 8, 3, 1, hexColor('#8E9DB4'));
-  } else {
-    disc(g, 9, 10.5, 1.5, const [Color(0xFF2B2B44)]);
-    disc(g, 14, 10.5, 1.5, const [Color(0xFF2B2B44)]);
-    put(g, 9, 10, hexColor('#FFFFFF'));
-    put(g, 14, 10, hexColor('#FFFFFF'));
-  }
-  rectFill(g, 7, 13, 2, 1, hexColor('#F2A0A0'));
-  rectFill(g, 15, 13, 2, 1, hexColor('#F2A0A0'));
-  put(g, 11, 12, ink);
-  put(g, 12, 12, ink);
-  put(g, 11, 13, ink);
-  put(g, 12, 13, ink);
-
-  if (state == 'clear') {
-    rectFill(g, 7, 9, 10, 1, hexColor('#1B1B2E'));
-    rectFill(g, 7, 10, 4, 2, hexColor('#2B2B44'));
-    rectFill(g, 13, 10, 4, 2, hexColor('#2B2B44'));
-    rectFill(g, 11, 10, 2, 1, hexColor('#1B1B2E'));
-    put(g, 8, 10, hexColor('#5B9BD5'));
-    put(g, 14, 10, hexColor('#5B9BD5'));
-  }
-  if (state == 'rain') {
-    rectFill(g, 19, 4, 1, 14, hexColor('#8E3B2C'));
-    for (var i = 0; i < 5; i++) {
-      rectFill(g, 15 + i, 3 - (2 - i).abs(), 1, 1, hexColor('#C24A34'));
-    }
-    rectFill(g, 14, 4, 11, 1, hexColor('#E0604A'));
-    rectFill(g, 15, 3, 9, 1, hexColor('#C24A34'));
-    rectFill(g, 16, 2, 7, 1, hexColor('#F07E62'));
-    put(g, 20, 18, hexColor('#8E3B2C'));
-    for (final p in const [[3, 6], [2, 10], [4, 14]]) {
-      put(g, p[0], p[1], hexColor('#7FB6E0'));
-      put(g, p[0], p[1] + 1, hexColor('#5B9BD5'));
-    }
-  }
-  if (state == 'snow') {
-    rectFill(g, 5, 14, 14, 2, hexColor('#C24A34'));
-    rectFill(g, 5, 16, 3, 4, hexColor('#E0604A'));
-    rectFill(g, 5, 15, 14, 1, hexColor('#E0604A'));
-    put(g, 5, 20, hexColor('#8E3B2C'));
-    put(g, 6, 20, hexColor('#8E3B2C'));
-    put(g, 7, 20, hexColor('#8E3B2C'));
-    for (final p in const [[2, 4], [20, 6], [4, 2]]) {
-      put(g, p[0], p[1], hexColor('#FFFFFF'));
-    }
-  }
-  if (state == 'night') {
-    rectFill(g, 5, 5, 14, 3, hexColor('#5B7FD5'));
-    rectFill(g, 6, 3, 11, 2, hexColor('#7E9BE8'));
-    rectFill(g, 8, 2, 7, 1, hexColor('#5B7FD5'));
-    disc(g, 18, 3, 1.6, [hexColor('#FFF3B8')]);
-    rectFill(g, 16, 15, 2, 1, hexColor('#B7DAF3'));
-    rectFill(g, 17, 16, 2, 1, hexColor('#B7DAF3'));
-  }
-  if (state == 'storm') {
-    rectFill(g, 2, 2, 20, 3, hexColor('#4A5268'));
-    rectFill(g, 3, 5, 18, 1, hexColor('#3B4257'));
-    _bolt(g, 1, 6, hexColor('#FFD75E'), hexColor('#FFF3B8'));
-  }
-  if (state == 'sad') {
-    rectFill(g, 8, 10, 3, 1, ink);
-    rectFill(g, 13, 10, 3, 1, ink);
-    rectFill(g, 10, 14, 4, 1, ink);
-  }
-
-  outline(g, ink);
-  return g;
 }
 
 /// 92×48 three-layer parallax landscape (far/mid/near hills, trees, a house,
