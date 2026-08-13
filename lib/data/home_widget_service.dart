@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 import 'package:home_widget/home_widget.dart';
 
 import '../logic/weather_logic.dart';
@@ -24,13 +26,27 @@ Future<void> updateWeatherWidget({
   required String unit,
   required String char,
 }) async {
+  final mascotState = mascotStateFor(cond, tod);
+
+  // Pre-load mascot PNG bytes so Image.memory() can render synchronously
+  // inside renderFlutterWidget — Image.asset() is async and the frame is
+  // captured before the image finishes loading in the off-screen context.
+  Uint8List? mascotBytes;
+  try {
+    final data = await rootBundle.load('assets/mascots/${char}_$mascotState.png');
+    mascotBytes = data.buffer.asUint8List();
+  } catch (_) {
+    // Asset load failed — widget renders without mascot image.
+  }
+
   final snapshot = WeatherWidgetSnapshot(
     city: city,
     temp: '${convertTemp(weather.temp.round(), unit)}°$unit',
     condLabel: weatherMods[cond]!.label + (tod == 'night' ? ' · Đêm' : ''),
     iconKind: effIcon(cond, tod),
     mascotChar: char,
-    mascotState: mascotStateFor(cond, tod),
+    mascotState: mascotState,
+    mascotBytes: mascotBytes,
     tod: tod,
   );
   await HomeWidget.renderFlutterWidget(

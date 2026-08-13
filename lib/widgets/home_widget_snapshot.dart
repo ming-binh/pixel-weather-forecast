@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../data/weather_data.dart';
@@ -5,7 +7,6 @@ import '../pixel/pixel_grid.dart';
 import '../pixel/sprites.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
-import 'mascot_widget.dart';
 import 'pixel_sprite.dart';
 
 /// The 4x1 Android home-screen widget's visual, in the app's own pixel-art
@@ -20,6 +21,7 @@ class WeatherWidgetSnapshot extends StatelessWidget {
   final String iconKind;
   final String mascotChar;
   final String mascotState;
+  final Uint8List? mascotBytes;
   final String tod;
 
   /// Matches the 4x1 cell size Android widgets conventionally use
@@ -34,6 +36,7 @@ class WeatherWidgetSnapshot extends StatelessWidget {
     required this.iconKind,
     required this.mascotChar,
     required this.mascotState,
+    required this.mascotBytes,
     required this.tod,
   });
 
@@ -92,7 +95,18 @@ class WeatherWidgetSnapshot extends StatelessWidget {
                 height: size.height,
                 child: Stack(
                   children: [
-                    Positioned(right: -8, top: 15, child: MascotWidget(char: mascotChar, state: mascotState, size: 80)),
+                    Positioned(
+                      right: -8,
+                      top: 15,
+                      child: mascotBytes != null
+                          ? Image.memory(
+                              mascotBytes!,
+                              width: 80,
+                              height: 80,
+                              filterQuality: FilterQuality.none,
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ),

@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../logic/weather_logic.dart';
@@ -15,6 +16,7 @@ const weatherWidgetRefreshTask = 'pixel_weather_widget_refresh';
 @pragma('vm:entry-point')
 void widgetRefreshCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
+    WidgetsFlutterBinding.ensureInitialized();
     if (task != weatherWidgetRefreshTask) return true;
     try {
       final prefs = await loadPrefs();
